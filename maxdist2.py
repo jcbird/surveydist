@@ -8,8 +8,9 @@ Request of Blanton for SDSS-IV overview paper.
 from __future__ import print_function
 import pandas as pd
 import numpy as np
-import mwdust
-# from dustmap_query import query
+# import mwdust
+from scipy.interpolate import UnivariateSpline
+from dustmap_query import query
 
 
 _RvAv_file = 'extinction_table.txt'
@@ -42,7 +43,7 @@ def ex_from_reddening(band=None):
 
 def dist2distmod(dist):
     """dist in kpc to distance modulus"""
-    return 5.*numpy.log10(dist)+10.
+    return 5.*np.log10(dist)+10.
 
 def distmod2dist(distmod):
     """distance modulus to distance in kpc"""
@@ -63,8 +64,30 @@ def calc_maxdist(l=30.0, b=0.0, source_Mag=2.0, limiting_mag=17.0, band=None):
 
 
 
+def los_maxdist(distances, Av, maxDM=10.0):
+    """
+    Given array of distances along a LOS in Galaxy, calculate max distance
+    observable given maximum distance modulus (depends on survey and
+    absolute magnitude of source.
 
+    Parameters
+    ----------------
 
+    distances : array
+        set of increasing distances along LOS
+    Av : array
+        set of extinctions corresponding to distances
+    maxDM : float
+        maximum distance modulus, m - M, where m is the limiting magnitude
+        of your survey and M is the absolute magnitude of your source in
+        the same photometric band as your extinction.
 
+    Returns
+    ----------------
+    distance
 
-
+    """
+    RHS = (maxDM - 10. - Av)/5.
+    LHS = np.log10(distances)
+    fit = UnivariateSpline(LHS, RHS, s=0)
+    return fit.roots()
